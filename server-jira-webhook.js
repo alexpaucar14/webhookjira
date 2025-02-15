@@ -1,21 +1,25 @@
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
 
 const app = express();
 app.use(express.json());
 
-const JIRA_BASE_URL = "https://tu-jira-instance.atlassian.net/rest/api/3";
-const JIRA_USER = "tu-email@empresa.com";
-const JIRA_API_TOKEN = "tu-token-jira";
-const GITHUB_TOKEN = "tu-github-token";
-const GITHUB_REPO = "tu-org/tu-repo";
+const {
+    JIRA_BASE_URL,
+    JIRA_USER,
+    JIRA_API_TOKEN,
+    GITHUB_TOKEN,
+    GITHUB_REPO,
+    PORT
+} = process.env;
+
 const JIRA_HEADERS = {
     Authorization: `Basic ${Buffer.from(`${JIRA_USER}:${JIRA_API_TOKEN}`).toString("base64")}`,
     "Content-Type": "application/json",
 };
 
-// Webhook endpoint en Node.js para recibir eventos de Jira
-app.post("/jira-webhook", async (req, res) => {
+app.post("/jira-webhook-io", async (req, res) => {
     try {
         const issue = req.body.issue;
         const status = issue.fields.status.name;
@@ -64,7 +68,6 @@ app.post("/jira-webhook", async (req, res) => {
     }
 });
 
-// Función para aprobar un PR en GitHub
 async function approveGitHubPR() {
     const pullRequestNumber = 123; // Reemplazar con lógica real para obtener el PR
     const url = `https://api.github.com/repos/${GITHUB_REPO}/pulls/${pullRequestNumber}/reviews`;
@@ -77,7 +80,6 @@ async function approveGitHubPR() {
     console.log(`PR #${pullRequestNumber} aprobado.`);
 }
 
-// Función para transicionar un issue en Jira
 async function transitionJiraIssue(issueKey, newStatus) {
     const transitionId = await getJiraTransitionId(issueKey, newStatus);
     if (!transitionId) return;
@@ -87,7 +89,6 @@ async function transitionJiraIssue(issueKey, newStatus) {
     console.log(`Issue ${issueKey} transicionado a ${newStatus}.`);
 }
 
-// Obtiene el ID de transición en Jira
 async function getJiraTransitionId(issueKey, newStatus) {
     const url = `${JIRA_BASE_URL}/issue/${issueKey}/transitions`;
     const response = await axios.get(url, { headers: JIRA_HEADERS });
@@ -95,5 +96,4 @@ async function getJiraTransitionId(issueKey, newStatus) {
     return transition ? transition.id : null;
 }
 
-// Inicia el servidor
-app.listen(3000, () => console.log("Servidor corriendo en puerto 3000"));
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
